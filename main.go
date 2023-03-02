@@ -9,6 +9,8 @@ import (
 	"github.com/zerosuxx/go-simple-http-server/pkg/handler"
 )
 
+var Version = "development"
+
 func main() {
     rootPath := "/"
     if len(os.Args) > 1 {
@@ -22,6 +24,6 @@ func main() {
         http.HandleFunc("/", handler.FileHandler{RootPath: rootPath}.Handle)
     }
 
-    log.Printf("Listening on %s | RootPath: '%s'", "http://localhost:8080", rootPath)
+    log.Printf("Simple HTTP Server %s | Listening on %s | RootPath: '%s'", Version, "http://localhost:8080", rootPath)
     log.Fatal(http.ListenAndServe(":8080", nil))
 }

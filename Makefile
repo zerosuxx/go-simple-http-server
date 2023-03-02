@@ -24,7 +24,7 @@ build-all: ## Build application for supported architectures
 	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-X 'main.Version=${version}'" -o build/${BINARY_NAME}-windows-x86_64.exe main.go
 
 run: ## Run the application
-	go run checker.go server
+	go run main.go
 
 lint: ## Check lint errors
 	staticcheck ./...
