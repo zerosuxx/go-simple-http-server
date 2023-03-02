@@ -1,33 +1,27 @@
 package main
 
 import (
-    "fmt"
-    "log"
-    "net/http"
-    "os"
+	"io"
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/zerosuxx/go-simple-http-server/pkg/handler"
 )
 
 func main() {
-    http.HandleFunc("/", FileHandler)
+    rootPath := "/"
+    if len(os.Args) > 1 {
+        rootPath = os.Args[1]
+    }
 
-    log.Println("Listening on http://localhost:8080...")
+    if rootPath == "-" {
+        inputData, _ := io.ReadAll(os.Stdin)
+        http.HandleFunc("/", handler.StdinHandler{Input: string(inputData)}.Handle)
+    } else {
+        http.HandleFunc("/", handler.FileHandler{RootPath: rootPath}.Handle)
+    }
+
+    log.Printf("Listening on %s | RootPath: '%s'", "http://localhost:8080", rootPath)
     log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func FileHandler(w http.ResponseWriter, r *http.Request) {
-    contents, err := os.ReadFile("/tmp/" + r.URL.Path[1:])
-    if err != nil {
-      w.WriteHeader(http.StatusNotFound)
-      fmt.Fprintf(w, err.Error())
-      return
-    }
-
-  
-    mimeType := http.DetectContentType(contents)
-    if mimeType == "application/octet-stream" {
-       mimeType = "application/text"
-    }
-    w.Header().Add("Content-Type", mimeType)
-    w.WriteHeader(http.StatusOK)
-    w.Write([]byte(string(contents)))
 }
