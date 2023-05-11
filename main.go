@@ -21,7 +21,10 @@ func main() {
         inputData, _ := io.ReadAll(os.Stdin)
         http.HandleFunc("/", handler.StdinHandler{Input: string(inputData)}.Handle)
     } else {
-        http.HandleFunc("/", handler.FileHandler{RootPath: rootPath}.Handle)
+        http.HandleFunc("/", handler.FileHandler{
+            RootPath: rootPath,
+            DirectoryIndexEnabled: os.Getenv("DIRECTORY_INDEX_ENABLED") == "1",
+        }.Handle)
     }
 
     log.Printf("Simple HTTP Server %s | Listening on %s | RootPath: '%s'", Version, "http://localhost:8080", rootPath)

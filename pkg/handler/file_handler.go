@@ -7,23 +7,32 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
 type FileHandler struct {
 	RootPath string
+	DirectoryIndexEnabled bool
 }
 
-func handleError(err error, statusCode int, w http.ResponseWriter) {
-	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprint(w, err.Error())
-}
+func (h *FileHandler) handleDirectoryList(path string, w http.ResponseWriter) {
+	if (!h.DirectoryIndexEnabled) {
+		err := errors.New("requested file is a directory")
+		handleError(err, http.StatusBadRequest, w)
+		return
+	}
 
-func getFileHeader(f *os.File) []byte {
-	buf := make([]byte, 512)
-	_, _ = f.Read(buf)
-	f.Seek(0, 0)
-	return buf
+	fileList, err := getFileList(h.RootPath, path)
+
+	if err != nil {
+		handleError(err, http.StatusBadRequest, w)
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fileList))
 }
 
 func (h FileHandler) Handle(w http.ResponseWriter, r *http.Request) {
@@ -38,9 +47,8 @@ func (h FileHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if fileInfo.IsDir() {
-		err := errors.New("requested file is a directory")
-		handleError(err, http.StatusBadRequest, w)
-
+		h.handleDirectoryList(filePath, w)
+		
 		return
 	}
 
@@ -70,4 +78,36 @@ func (h FileHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			w.Write(buf[:n])
 		}
 	}
+}
+
+func handleError(err error, statusCode int, w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprint(w, err.Error())
+}
+
+func getFileHeader(f *os.File) []byte {
+	buf := make([]byte, 512)
+	_, _ = f.Read(buf)
+	f.Seek(0, 0)
+	return buf
+}
+
+func getFileList(rootPath string, path string) (string, error) {
+	fileList := ""
+	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err;
+        }
+
+		if (path == p) {
+			//fileList += `<a href="` + url + `">` + url + `</a><br>`;
+		} else {
+			url := string(p[len(rootPath):])
+			fileList += `<a href="` + url + `">` + url + `</a><br>`;
+		}
+
+		return nil
+    })
+
+	return fileList, err
 }
