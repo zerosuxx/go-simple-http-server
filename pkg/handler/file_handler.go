@@ -7,17 +7,16 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 )
 
 type FileHandler struct {
-	RootPath string
+	RootPath              string
 	DirectoryIndexEnabled bool
 }
 
-func (h *FileHandler) handleDirectoryList(path string, w http.ResponseWriter) {
-	if (!h.DirectoryIndexEnabled) {
+func (h FileHandler) handleDirectoryList(path string, w http.ResponseWriter) {
+	if !h.DirectoryIndexEnabled {
 		err := errors.New("requested file is a directory")
 		handleError(err, http.StatusBadRequest, w)
 		return
@@ -32,7 +31,16 @@ func (h *FileHandler) handleDirectoryList(path string, w http.ResponseWriter) {
 
 	w.Header().Add("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fileList))
+	_, _ = w.Write([]byte(`<!DOCTYPE html>` + "\n"))
+	_, _ = w.Write([]byte(`<html>` + "\n"))
+	_, _ = w.Write([]byte(`<head>` + "\n"))
+	_, _ = w.Write([]byte(`<meta charset="utf-8">` + "\n"))
+	_, _ = w.Write([]byte(`<base href="/">` + "\n"))
+	_, _ = w.Write([]byte(`</head>` + "\n"))
+	_, _ = w.Write([]byte(`<body>` + "\n"))
+	_, _ = w.Write([]byte(fileList))
+	_, _ = w.Write([]byte(`</body>` + "\n"))
+	_, _ = w.Write([]byte(`</html>` + "\n"))
 }
 
 func (h FileHandler) Handle(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +56,7 @@ func (h FileHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	if fileInfo.IsDir() {
 		h.handleDirectoryList(filePath, w)
-		
+
 		return
 	}
 
@@ -75,39 +83,44 @@ func (h FileHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if n > 0 {
-			w.Write(buf[:n])
+			_, _ = w.Write(buf[:n])
 		}
 	}
 }
 
 func handleError(err error, statusCode int, w http.ResponseWriter) {
-	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprint(w, err.Error())
+	w.WriteHeader(statusCode)
+	_, _ = fmt.Fprint(w, err.Error())
 }
 
 func getFileHeader(f *os.File) []byte {
 	buf := make([]byte, 512)
 	_, _ = f.Read(buf)
-	f.Seek(0, 0)
+	_, _ = f.Seek(0, 0)
 	return buf
 }
 
 func getFileList(rootPath string, path string) (string, error) {
 	fileList := ""
-	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-        if err != nil {
-            return err;
-        }
 
-		if (path == p) {
-			//fileList += `<a href="` + url + `">` + url + `</a><br>`;
-		} else {
-			url := string(p[len(rootPath):])
-			fileList += `<a href="` + url + `">` + url + `</a><br>`;
+	files, err := os.ReadDir(path)
+	if err != nil {
+		return fileList, err
+	}
+
+	urlPrefixTrimLength := len(rootPath) + 1
+
+	for _, file := range files {
+		url := path[urlPrefixTrimLength:] + "/" + file.Name()
+		fileType := "file"
+		if file.IsDir() {
+			fileType = "dir"
 		}
+		fileInfo, _ := file.Info()
+		fileSize := strconv.FormatInt(fileInfo.Size(), 10)
 
-		return nil
-    })
+		fileList += `<a href="` + url + `">` + file.Name() + `</a> (` + fileSize + `B) [` + fileType + `]<br>` + "\n"
+	}
 
 	return fileList, err
 }
