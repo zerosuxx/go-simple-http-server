@@ -124,13 +124,13 @@ func getFileHeader(f *os.File) []byte {
 
 func getContentType(filePath string, file *os.File) string {
 	ext := filepath.Ext(filePath)
-	if ext == "js" {
+	if ext == ".js" {
 		return "text/javascript"
 	}
-	if ext == "json" {
+	if ext == ".json" {
 		return "application/json"
 	}
-	if ext == "css" {
+	if ext == ".css" {
 		return "text/css"
 	}
 
