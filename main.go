@@ -25,6 +25,7 @@ func main() {
 			RootPath:              rootPath,
 			DirectoryIndexEnabled: os.Getenv("DIRECTORY_INDEX_ENABLED") == "1",
 			NotFoundFile:          os.Getenv("NOT_FOUND_FILE"),
+			IndexFile:             os.Getenv("INDEX_FILE"),
 		}.Handle)
 	}
 

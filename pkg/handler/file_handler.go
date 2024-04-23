@@ -15,6 +15,7 @@ type FileHandler struct {
 	RootPath              string
 	DirectoryIndexEnabled bool
 	NotFoundFile          string
+	IndexFile             string
 }
 
 func (h FileHandler) handleDirectoryList(path string, w http.ResponseWriter) {
@@ -41,6 +42,11 @@ func (h FileHandler) handleDirectoryList(path string, w http.ResponseWriter) {
 
 func (h FileHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	var filePath = h.RootPath + "/" + r.URL.Path[1:]
+
+	if h.IndexFile != "" && r.URL.Path == "/" {
+		filePath += h.IndexFile
+		log.Printf("New index file configured | file: '%s'", filePath)
+	}
 
 	log.Printf("Incoming request path: '%s' | file: '%s'", r.URL.Path, filePath)
 
