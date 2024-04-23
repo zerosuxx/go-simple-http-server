@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -80,8 +81,17 @@ func (h FileHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	w.Header().Add("Content-Type", http.DetectContentType(getFileHeader(f)))
-	w.Header().Add("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+	contentType := getContentType(filePath, f)
+	contentLength := strconv.FormatInt(fileInfo.Size(), 10)
+	log.Printf(
+		"Founded file: '%s' | Content-Type: '%s' | Content-Length: '%s'",
+		filePath,
+		contentType,
+		contentLength,
+	)
+
+	w.Header().Add("Content-Type", contentType)
+	w.Header().Add("Content-Length", contentLength)
 	w.WriteHeader(http.StatusOK)
 
 	buf := make([]byte, 1024)
@@ -110,6 +120,21 @@ func getFileHeader(f *os.File) []byte {
 	_, _ = f.Read(buf)
 	_, _ = f.Seek(0, 0)
 	return buf
+}
+
+func getContentType(filePath string, file *os.File) string {
+	ext := filepath.Ext(filePath)
+	if ext == "js" {
+		return "text/javascript"
+	}
+	if ext == "json" {
+		return "application/json"
+	}
+	if ext == "css" {
+		return "text/css"
+	}
+
+	return http.DetectContentType(getFileHeader(file))
 }
 
 func getFileList(rootPath string, path string) (string, error) {
