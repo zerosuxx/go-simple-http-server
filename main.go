@@ -24,9 +24,14 @@ func main() {
 		http.HandleFunc("/", handler.FileHandler{
 			RootPath:              rootPath,
 			DirectoryIndexEnabled: os.Getenv("DIRECTORY_INDEX_ENABLED") == "1",
+			NotFoundFile:          os.Getenv("NOT_FOUND_FILE"),
 		}.Handle)
 	}
 
-	log.Printf("Simple HTTP Server %s | Listening on %s | RootPath: '%s'", Version, "http://localhost:8080", rootPath)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	address := os.Getenv("ADDRESS")
+	if address == "" {
+		address = "0.0.0.0:8080"
+	}
+	log.Printf("Simple HTTP Server %s | Listening on %s | RootPath: '%s'", Version, "http://"+address, rootPath)
+	log.Fatal(http.ListenAndServe(address, nil))
 }

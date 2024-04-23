@@ -13,15 +13,10 @@ import (
 type FileHandler struct {
 	RootPath              string
 	DirectoryIndexEnabled bool
+	NotFoundFile          string
 }
 
 func (h FileHandler) handleDirectoryList(path string, w http.ResponseWriter) {
-	if !h.DirectoryIndexEnabled {
-		err := errors.New("requested file is a directory")
-		handleError(err, http.StatusBadRequest, w)
-		return
-	}
-
 	fileList, err := getFileList(h.RootPath, path)
 
 	if err != nil {
@@ -50,11 +45,28 @@ func (h FileHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
-		handleError(err, http.StatusNotFound, w)
+		if h.NotFoundFile == "" {
+			handleError(err, http.StatusNotFound, w)
+			return
+		}
 
-		return
+		fileInfo, err = os.Stat(h.NotFoundFile)
+		if err != nil {
+			log.Println("Error loading file: " + h.NotFoundFile)
+
+			handleError(err, http.StatusNotFound, w)
+			return
+		}
+		filePath = h.NotFoundFile
 	}
+
 	if fileInfo.IsDir() {
+		if !h.DirectoryIndexEnabled {
+			err := errors.New("requested file is a directory")
+			handleError(err, http.StatusBadRequest, w)
+			return
+		}
+
 		h.handleDirectoryList(filePath, w)
 
 		return

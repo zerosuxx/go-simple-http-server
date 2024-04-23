@@ -1,11 +1,13 @@
 FROM golang:alpine AS base
 
+ARG APP_VERSION="development"
+
 WORKDIR /app
 
 COPY *go* /app
 COPY pkg/ /app/pkg
 
-RUN go build -o app
+RUN go build -ldflags="-X 'main.Version=${APP_VERSION}'" -o app
 
 RUN apk add --no-cache --update ca-certificates tzdata
 
