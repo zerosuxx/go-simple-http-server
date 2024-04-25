@@ -12,6 +12,8 @@ import (
 var Version = "development"
 
 func main() {
+	log.SetOutput(os.Stdout)
+
 	rootPath := "."
 	if len(os.Args) > 1 {
 		rootPath = os.Args[1]
